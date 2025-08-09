@@ -242,3 +242,11 @@ The Vetchium platform uses a Role-Based Access Control (RBAC) model to manage us
 |------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Admin**        | **[Full Control]** Can perform all actions: User Management (Invite, update roles, disable/re-enable users), Agency Performance (View dashboard).                                                                                                   |
 | **Recruiter**    | **[Recruitment Focus]** Can manage the full lifecycle of recruitment for assigned openings: Candidate Management (View, filter, and manage all candidates), Interviews (Schedule interviews and manage interviewers).                                               |
+
+## API Guidelines
+- All APIs should take JSON encoded request bodies and response bodies
+- Path parameters and URL parameters should be minimized
+- All endpoints should be protected with Authentication and Authorization checks. Endpoints that should not be protected (Like for example, Login, Forgot Password, etc.) need to be called out as Unprotected.
+- All top-level APIs which returns a list of items should support pagination. There must be support for a Limit field, an explicit mention of the Sorting Order (Ascending or Descending), Some kind of Offset field to indicate the fetching boundary.
+- All fields in the request bodies should have limits on length, validation checks
+- In case of errors, the API responses should clearly convey which of the request fields are failing or causing an error in case of HTTP 400 errors. The way in which the errors should be parsed to understand the cause of the error for validation failures should be standardized.
