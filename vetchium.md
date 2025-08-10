@@ -44,10 +44,11 @@ An individual who works for a registered employer. They can have various roles a
     - Organize applications using internal-facing color tags.
 - **Candidacy Management**:
     - View a detailed page for each application (candidacy).
+    - **Candidacy States**: Each application has a system-managed state, distinct from the custom pipeline stages. These states govern key parts of the recruitment flow, especially offers. The states include: `Applied`, `In-Review`, `Screening`, `Interviewing`, `Offer-Draft`, `Offer-Extended`, `Offer-Accepted`, `Offer-Rejected`, `Hired`, `Withdrawn`, `Rejected`.
     - **Communication Threads**: Each candidacy has two dedicated communication threads:
         - **Internal Discussion**: A private thread for the Recruiter, Hiring Manager, and all assigned Interviewers to discuss the candidate, share feedback, and coordinate internally. This replaces static notes with an interactive discussion.
         - **Candidate Chat**: A thread for the Recruiter and Hiring Manager to communicate directly with the candidate for coordination and updates.
-    - Make an official job offer to a candidate through the platform.
+    - Make an official job offer to a candidate, which moves the candidacy state to `Offer-Extended` and notifies the candidate.
 - **Interview Scheduling & Feedback**:
     - Schedule interviews for a candidate, specifying the format and details.
     - Add or remove internal users as interviewers for a scheduled event.
@@ -121,8 +122,8 @@ An individual professional using the platform for career growth, job seeking, an
 #### F. User Blocking and Unblocking
 - **Blocking a User**: A Hub User can block another Hub User at any time. The blocked user is not notified.
     - **Immediate Effects**:
-        - If the blocker and the blocked user were following each other, both follow connections are immediately and permanently severed.
-        - If they were colleagues, the colleague connection is permanently removed.
+        - If the blocker and the blocked user were following each other, both follow connections are immediately severed and are not automatically restored upon unblocking.
+        - If they were colleagues, the colleague connection is removed and is not automatically restored upon unblocking.
     - **Interaction Restrictions**:
         - Neither user can follow the other again.
         - Neither user can send a colleague request to the other.
@@ -170,7 +171,7 @@ An individual who works for a registered recruitment agency. They can have vario
     - Submit candidates for consideration.
     - View the status of their submitted candidates.
     - Schedule interviews and coordinate with candidates.
-    - Add private notes and comments on a candidacy, visible to other users within their agency and the employer's hiring team.
+    - Add private notes and comments on a candidacy, visible only to other users within their own agency.
 
 #### D. Private Notes on Professionals
 - **Adding Notes**: Agency users can add private notes to any Hub User's profile, using the Hub User's handle as a key. These notes are strictly internal to the agency and are **not shared with employers**. They can be used to track candidate suitability and internal assessments.
@@ -227,7 +228,7 @@ The Vetchium platform uses a Role-Based Access Control (RBAC) model to manage us
 |-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Free User**   | **[Standard Access]** Account (Full account and profile management without paid features), Job Seeking (Search, view, and apply for all job openings), Social (Follow users/companies, create limited posts, comment, vote), Incognito (Full access to the anonymous community forum). |
 | **Silver User** | **[Enhanced Access]** Includes all Free User permissions, plus: AI-powered resume scoring against job descriptions.                                                                                                                                      |
-| **Gold User**   | **[Premium Access]** Includes all Silver User permissions, plus: The ability to gather and save documents when an employee is offered a job.                                                                                                                            |
+| **Gold User**   | **[Premium Access]** Includes all Silver User permissions, plus: The ability to request, gather, and store initial onboarding documents (e.g., degree certificates, proof of previous employment) from a candidate after an offer has been accepted.             |
 
 ### C. Vetchium Admin Portal Roles
 
@@ -245,7 +246,7 @@ The Vetchium platform uses a Role-Based Access Control (RBAC) model to manage us
 
 
 ## Federated Setup
-All the above portals that we mentioned all belong to a single tenant. Within a single instance, multiple users and employers and agencies will be able to register and use. All their data will be saved on a single geographical location, such as EuropeanUnion or India. We will have a federated setup of multiple regions/tenants. The Admins of two Vetchium instances should be able to mutually verify their instances via some APIs and connect them. Each User will belong to a single tenant. But each user will be able to follow users and organizations from other instances. A single Organization can have different SubOrgs belonging to two different tenants.
+All the above portals that we mentioned all belong to a single tenant. Within a single instance, multiple users and employers and agencies will be able to register and use. All their data will be saved on a single geographical location, such as EuropeanUnion or India. We will have a federated setup of multiple regions/tenants. The Admins of two Vetchium instances can connect them by registering the other instance's base API URL in their admin settings. The systems will then perform a handshake to verify the connection and establish trust. Each User will belong to a single tenant. But each user will be able to follow users and organizations from other instances. A single Organization can have different SubOrgs belonging to two different tenants.
 
 ### Data Constraints on the Federated Setup
 All Posts and IncognitoPosts written by a HubUser will be saved on the Tenant where the HubUser account exists.
@@ -266,3 +267,6 @@ Domains, HubUser email addresses, HubUser handles all need to remain Unique acro
 - All top-level APIs which returns a list of items should support pagination. There must be support for a Limit field, an explicit mention of the Sorting Order (Ascending or Descending), Some kind of Offset field to indicate the fetching boundary.
 - All fields in the request bodies should have limits on length, validation checks
 - In case of errors, the API responses should clearly convey which of the request fields are failing or causing an error in case of HTTP 400 errors. The way in which the errors should be parsed to understand the cause of the error for validation failures should be standardized.
+
+### TODOs and Open Questions
+- **Pagination Strategy**: The current specification suggests offset-based pagination. We need to evaluate and consider recommending **cursor-based pagination** (using a `next_page_token` or similar). This approach is generally more performant and robust for real-time systems and avoids issues with data shifting between pages.
