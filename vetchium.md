@@ -1,6 +1,6 @@
 # Vetchium Platform API Specification
 
-This document outlines the functional specification for the Vetchium platform, which consists of four main front-ends: the Employer Portal, the Professionals Hub, the Recruitment Agency Portal, and the Vetchium Admin Portal. The specification is described from the perspective of its end-users.
+This document outlines the functional specification for the Vetchium platform, which consists of four main front-ends: the Employer Portal, the Professionals Hub, the Recruitment Agency Portal, and the Vetchium Admin Portal. The specification is described from the perspective of its end-users. This document will be used to generate the APIs that will be needed to satisfy the below specification.
 
 ---
 
@@ -208,7 +208,7 @@ An employee of Vetchium with super-user privileges to manage the platform.
 
 ---
 
-## 4. Roles and Permissions (RBAC)
+## Roles and Permissions (RBAC)
 
 The Vetchium platform uses a Role-Based Access Control (RBAC) model to manage user permissions. Roles are defined independently for each portal and are designed to be extensible, allowing for the future addition of new roles with minimal impact on the existing system.
 
@@ -242,6 +242,22 @@ The Vetchium platform uses a Role-Based Access Control (RBAC) model to manage us
 |------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Admin**        | **[Full Control]** Can perform all actions: User Management (Invite, update roles, disable/re-enable users), Agency Performance (View dashboard).                                                                                                   |
 | **Recruiter**    | **[Recruitment Focus]** Can manage the full lifecycle of recruitment for assigned openings: Candidate Management (View, filter, and manage all candidates), Interviews (Schedule interviews and manage interviewers).                                               |
+
+
+## Federated Setup
+All the above portals that we mentioned all belong to a single tenant. Within a single instance, multiple users and employers and agencies will be able to register and use. All their data will be saved on a single geographical location, such as EuropeanUnion or India. We will have a federated setup of multiple regions/tenants. The Admins of two Vetchium instances should be able to mutually verify their instances via some APIs and connect them. Each User will belong to a single tenant. But each user will be able to follow users and organizations from other instances. A single Organization can have different SubOrgs belonging to two different tenants.
+
+### Data Constraints on the Federated Setup
+All Posts and IncognitoPosts written by a HubUser will be saved on the Tenant where the HubUser account exists.
+All comments on a Post or an IncognitoPost will be saved on the Tenant where the original author of the HubUser account exists.
+All JobOpenings will be saved on the Org or the SubOrg's Tenant where the Employer account exists. The SubOrg's Tenant will be given higher priority than the Org's Tenant, if they belong to multiple Tenants.
+Users cannot migrate their Posts or IncognitoPosts from one Tenant to another.
+Users can migrate their Profile (Following, Followers, Colleagues, Invites, etc.) from one Tenant to another, if they choose to ditch their past Posts, IncognitoPosts.
+Orgs cannot migrate from one Tenant to another. They need to (disable or delete) from their existing Tenant and recreate Org or SubOrg in a different tenant, if they need to migrate.
+Two different Orgs cannot have same domain verified even across multiple Tenants
+Two different HubUsers cannot have same handle across multiple Tenants
+Two different HubUsers cannot have same email address across multiple Tenants
+Domains, HubUser email addresses, HubUser handles all need to remain Unique across all mutually verified multiple Tenants
 
 ## API Guidelines
 - All APIs should take JSON encoded request bodies and response bodies
