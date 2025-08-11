@@ -31,6 +31,9 @@ An individual who works for a registered employer. They can have various roles a
 - **Custom Recruitment Pipelines**:
     - Admins can create and manage a library of custom pipeline stages for their organization (e.g., "Phone Screen," "Technical Interview," "Offer Stage," "Background Check").
     - For each job opening, the creator can define a specific pipeline by selecting and ordering stages from the company's library. This allows for flexible, per-opening recruitment workflows.
+- **Custom Rejection Reasons**:
+    - Admins can create and manage a library of rejection reasons for their organization (e.g., "Does not meet qualifications," "Salary expectations too high," "Better candidates in pipeline," "Not a culture fit").
+    - This allows for detailed analytics on why candidates are being disqualified.
 - **Job Openings**:
     - Create, update, and view detailed job openings. Each opening must have one internal Recruiter and one Hiring Manager assigned.
     - Filter and view a list of all current and past openings.
@@ -43,17 +46,25 @@ An individual who works for a registered employer. They can have various roles a
     - Manage applications by moving candidates through the custom pipeline stages defined for the job opening.
     - Organize applications using internal-facing color tags.
 - **Candidacy Management**:
-    - View a detailed page for each application (candidacy).
-    - **The Relationship Between Pipelines and States**: To ensure both flexibility and consistency, the platform separates the customizable employer-facing pipeline from the system-managed candidacy state.
-        - **Custom Recruitment Pipelines** are for **organization and display**. They represent an employer's specific, internal hiring process (e.g., "HR Screen," "Code Challenge," "Final Panel"). Admins can create, name, and order these stages freely to match their company's workflow. Recruiters use these stages to track where a candidate is from their perspective.
-        - **Candidacy States** are for **system logic and actions**. They are a fixed set of statuses (`Applied`, `In-Review`, `Interviewing`, `Offer-Draft`, etc.) that are not customizable. The system uses these states to trigger notifications, enable/disable features (like making an offer), and ensure a consistent data model for all applications across the platform.
-    - **How They Work Together**:
-        - Moving a candidate to a new custom pipeline stage can automatically update the underlying Candidacy State. For example, moving a candidate to a custom stage named "Technical Interview" or "Manager Call" would both map to the single system state of `Interviewing`.
-        - Certain system states are only triggered by explicit actions. For example, clicking a "Make Offer" button would move the state to `Offer-Draft`, and sending it changes the state to `Offer-Extended`.
-        - This dual system provides employers with a fully customized workflow view while allowing the platform to maintain a robust, predictable state machine for core recruitment functions.
-    - **Candidacy States List**: Each application has one of the following system-managed states: `Applied`, `In-Review`, `Screening`, `Interviewing`, `Offer-Draft`, `Offer-Extended`, `Offer-Accepted`, `Offer-Rejected`, `Hired`, `Withdrawn`, `Rejected`.
+    - **Candidacy States**: Each application has a single, system-managed state that reflects its position in the recruitment lifecycle. An application moves from `Applied` to either `Interviewing` or a terminal state.
+    - **Candidacy States List**: The states are grouped by their position in the hiring lifecycle:
+        - **Active States**:
+            - `Applied`: A new, unreviewed application. The entry point for all candidates.
+            - `Interviewing`: The candidate is actively engaged in any form of interview (phone, video, on-site, etc.).
+            - `Offer-Draft`: An official offer is being prepared internally by the hiring team.
+            - `Offer-Extended`: An official offer has been sent to the candidate for review.
+            - `Offer-Accepted`: The candidate has formally accepted the job offer, triggering the final administrative phase.
+            - `Onboarding`: Post-acceptance phase where document collection, background checks, and other administrative verifications occur.
+        - **Terminal States - Success**:
+            - `Hired`: The candidate has successfully completed onboarding and is officially designated as an employee.
+        - **Terminal States - Unsuccessful**:
+            - `Resume-Rejected`: The candidate was rejected based on their initial application, before any interview occurred.
+            - `Interview-Rejected`: The candidate was rejected after participating in one or more interviews.
+            - `Offer-Rejected`: The candidate has declined the job offer. This can be due to various reasons such as salary, benefits, or accepting another offer.
+            - `Offer-Rescinded`: The employer has withdrawn the offer during the `Onboarding` phase due to issues like a failed background check or visa unavailability.
+            - `Withdrawn`: The candidate has voluntarily withdrawn their application from consideration at any point in the process.
     - **Communication Threads**: Each candidacy has two dedicated communication threads:
-        - **Internal Discussion**: A private thread for the Recruiter, Hiring Manager, and all assigned Interviewers to discuss the candidate, share feedback, and coordinate internally. This replaces static notes with an interactive discussion.
+        - **Internal Discussion**: A private thread for the Recruiter, Hiring Manager, and all assigned Interviewers to discuss the candidate, share feedback, and coordinate internally.
         - **Candidate Chat**: A thread for the Recruiter and Hiring Manager to communicate directly with the candidate for coordination and updates.
     - Make an official job offer to a candidate, which moves the candidacy state to `Offer-Extended` and notifies the candidate.
 - **Interview Scheduling & Feedback**:
