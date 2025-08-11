@@ -51,7 +51,6 @@ An individual who works for a registered employer. They can have various roles a
         - **Active States**:
             - `Applied`: A new, unreviewed application. The entry point for all candidates.
             - `Interviewing`: The candidate is actively engaged in any form of interview (phone, video, on-site, etc.).
-            - `Offer-Draft`: An official offer is being prepared internally by the hiring team.
             - `Offer-Extended`: An official offer has been sent to the candidate for review.
             - `Offer-Accepted`: The candidate has formally accepted the job offer, triggering the final administrative phase.
             - `Onboarding`: Post-acceptance phase where document collection, background checks, and other administrative verifications occur.
@@ -79,7 +78,7 @@ An individual who works for a registered employer. They can have various roles a
 
 #### E. Recruitment Agency Management
 - **Adding and Removing Agencies**: Admins can search for, add, and remove Recruitment Agencies from their list of approved partners.
-- **Assigning Recruiters**: For any job opening, an Admin or Recruiter can assign a specific Recruiter from an approved agency to manage the sourcing and application process.
+- **Assigning Recruiters**: For any job opening, an Admin or Recruiter can assign a specific Recruiter from an approved agency or an internal user, to manage the sourcing and application process.
 - **Changing Recruiters**: The assigned Recruiter for an opening or a specific candidacy can be changed at any time.
 
 ---
@@ -95,27 +94,26 @@ An individual professional using the platform for career growth, job seeking, an
 ### Core Functionalities:
 
 #### A. Account & Profile Management
-- **Onboarding & Authentication**: Users can only sign up using a professional (work) email address from a domain approved by the platform. Public email domains (e.g., gmail.com, yahoo.com) are not permitted for initial registration. Standard authentication includes email/password sign-in (with TFA) and a "forgot password" flow.
+- **Onboarding & Authentication**: Users can only sign up using a professional (work) email address from a domain approved by the platform. Public email domains (e.g., gmail.com, yahoo.com) are not permitted for initial registration. Standard authentication includes email/password sign-in (with TFA) and a "forgot password" flow. After signingup, users can change the primary email address from the work email to their personal email address (gmail or yahoo or whatever).
 - **Handle**: Upon signup, users get a unique handle (username). Paid users can check for handle availability and change it.
 - **Profile Building**:
     - **Bio & Picture**: Users can write a professional bio. Paid users can upload a profile picture.
     - **Work History**: Users can add, update, and delete entries in their professional work history.
     - **Education & Achievements**: Users can list their educational background and professional achievements.
     - **Official Email**: Users can add and verify multiple official (work) email addresses to their profile to unlock certain features.
-- **Invitations**: Any user can invite others to join the platform.
 
 #### B. Job Seeking & Applications
 - **Discover Openings**: Users can search, filter (by tags, location, etc.), and view job openings from all employers.
 - **Apply**: Users can apply for any open position.
 - **Manage Applications**: Users can view a list of all their past applications and have the ability to withdraw an active application.
 - **Track Candidacy**:
-    - Users can view the current stage of their application in the hiring pipeline (e.g., "Technical Interview," "Offer Stage"), providing more transparency.
+    - Users can view the current stage of their application in the hiring pipeline, providing more transparency.
     - **Communicate with Hiring Team**: Users can engage in a two-way conversation with the Recruiter and Hiring Manager via the "Candidate Chat" thread on their application.
     - They can view and RSVP to interview invitations scheduled by the employer.
 
 #### C. Networking & Social Interaction
 - **User & Company Profiles**: Users can view the profiles of other professionals and follow companies.
-- **Following**: Users can follow/unfollow other users and companies to see their posts in their home timeline.
+- **Following**: Users can follow/unfollow other users and companies to see their posts in own timeline.
 - **Posts & Timeline**:
     - Users can create posts to share with their followers and the wider community. (Free users have limits).
     - The home timeline shows a feed of posts from followed users and organizations.
