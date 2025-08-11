@@ -226,7 +226,7 @@ An employee of Vetchium with super-user privileges to manage the platform.
 #### B. Content & Data Management
 - **Signup Domain Management**: Admins can manage the list of email domains that are permitted or denied for Hub User registration, ensuring only users with professional email addresses can join.
 - **Tags (VTags)**: Admins can create, read, update, and delete (CRUD) the skill tags used across the platform for job openings and user profiles.
-- **Federation**: A platform super admin can manage the list of trusted geographic regions for data sharing and federation.
+- **Region Management**: A platform super admin can manage the available geographic regions for data storage and define data residency policies.
 
 ---
 
@@ -255,7 +255,7 @@ The Vetchium platform uses a Role-Based Access Control (RBAC) model to manage us
 
 | Role                | Permissions                                                                                                                                                                                                                           |
 |---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Super Admin**     | **[Platform-Wide Full Control]** Can perform all administrative actions: User Management (Invite, block, and manage all users), Content Management (Full CRUD on VTags), Platform Settings (Manage federation and other global configurations). |
+| **Super Admin**     | **[Platform-Wide Full Control]** Can perform all administrative actions: User Management (Invite, block, and manage all users), Content Management (Full CRUD on VTags), Platform Settings (Manage regions and other global configurations). |
 | **Content Moderator**| **[Content Focus]** Can manage user-generated content: Posts & Comments (View and delete any user-generated posts/comments), User Reporting (Review and act on user-reported content).                                                     |
 
 ### D. Recruitment Agency Portal Roles
@@ -266,20 +266,23 @@ The Vetchium platform uses a Role-Based Access Control (RBAC) model to manage us
 | **Recruiter**    | **[Recruitment Focus]** Can manage the full lifecycle of recruitment for assigned openings: Candidate Management (View, filter, and manage all candidates), Interviews (Schedule interviews and manage interviewers).                                               |
 
 
-## Federated Setup
-All the above portals that we mentioned all belong to a single tenant. Within a single instance, multiple users and employers and agencies will be able to register and use. All their data will be saved on a single geographical location, such as EuropeanUnion or India. We will have a federated setup of multiple regions/tenants. The Admins of two Vetchium instances can connect them by registering the other instance's base API URL in their admin settings. The systems will then perform a handshake to verify the connection and establish trust. Each User will belong to a single tenant. But each user will be able to follow users and organizations from other instances. A single Organization can have different SubOrgs belonging to two different tenants.
+## Geographically Distributed System
 
-### Data Constraints on the Federated Setup
-All Posts and IncognitoPosts written by a HubUser will be saved on the Tenant where the HubUser account exists.
-All comments on a Post or an IncognitoPost will be saved on the Tenant where the original author of the HubUser account exists.
-All JobOpenings will be saved on the Org or the SubOrg's Tenant where the Employer account exists. The SubOrg's Tenant will be given higher priority than the Org's Tenant, if they belong to multiple Tenants.
-Users cannot migrate their Posts or IncognitoPosts from one Tenant to another.
-Users can migrate their Profile (Following, Followers, Colleagues, Invites, etc.) from one Tenant to another, if they choose to ditch their past Posts, IncognitoPosts.
-Orgs cannot migrate from one Tenant to another. They need to (disable or delete) from their existing Tenant and recreate Org or SubOrg in a different tenant, if they need to migrate.
-Two different Orgs cannot have same domain verified even across multiple Tenants
-Two different HubUsers cannot have same handle across multiple Tenants
-Two different HubUsers cannot have same email address across multiple Tenants
-Domains, HubUser email addresses, HubUser handles all need to remain Unique across all mutually verified multiple Tenants
+The Vetchium platform operates as a single, globally distributed system. While there is only one Vetchium platform, its underlying infrastructure and data storage are spread across multiple geographic regions (e.g., European Union, India, North America) to ensure high performance and compliance with local data residency regulations.
+
+### Data Residency and Constraints
+
+To meet regulatory requirements, user and organization data is assigned a "Home Region" for storage.
+
+- All core data for a Hub User (including their Posts, Comments, and Profile) is stored in the Home Region selected during their account creation.
+- All core data for an Organization (including its Job Openings) is stored in the Home Region selected during its creation. If an Organization has sub-entities in different regions, the data for those sub-entities will be stored in their respective designated regions.
+- While data is stored in a specific region, it is accessible globally to all users of the platform, subject to standard permissions.
+- Users can request to migrate their profile and data from one region to another, subject to platform policies.
+- Organizations cannot be migrated from one region to another. They must be recreated in the new region if a change is required.
+- To ensure a seamless global user experience, the following must be unique across the entire platform, regardless of region: 
+    - Organization domain names
+    - Hub User handles
+    - Hub User email addresses
 
 ## API Guidelines
 - All APIs should take JSON encoded request bodies and response bodies
