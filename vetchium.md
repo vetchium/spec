@@ -44,7 +44,14 @@ An individual who works for a registered employer. They can have various roles a
     - Organize applications using internal-facing color tags.
 - **Candidacy Management**:
     - View a detailed page for each application (candidacy).
-    - **Candidacy States**: Each application has a system-managed state, distinct from the custom pipeline stages. These states govern key parts of the recruitment flow, especially offers. The states include: `Applied`, `In-Review`, `Screening`, `Interviewing`, `Offer-Draft`, `Offer-Extended`, `Offer-Accepted`, `Offer-Rejected`, `Hired`, `Withdrawn`, `Rejected`.
+    - **The Relationship Between Pipelines and States**: To ensure both flexibility and consistency, the platform separates the customizable employer-facing pipeline from the system-managed candidacy state.
+        - **Custom Recruitment Pipelines** are for **organization and display**. They represent an employer's specific, internal hiring process (e.g., "HR Screen," "Code Challenge," "Final Panel"). Admins can create, name, and order these stages freely to match their company's workflow. Recruiters use these stages to track where a candidate is from their perspective.
+        - **Candidacy States** are for **system logic and actions**. They are a fixed set of statuses (`Applied`, `In-Review`, `Interviewing`, `Offer-Draft`, etc.) that are not customizable. The system uses these states to trigger notifications, enable/disable features (like making an offer), and ensure a consistent data model for all applications across the platform.
+    - **How They Work Together**:
+        - Moving a candidate to a new custom pipeline stage can automatically update the underlying Candidacy State. For example, moving a candidate to a custom stage named "Technical Interview" or "Manager Call" would both map to the single system state of `Interviewing`.
+        - Certain system states are only triggered by explicit actions. For example, clicking a "Make Offer" button would move the state to `Offer-Draft`, and sending it changes the state to `Offer-Extended`.
+        - This dual system provides employers with a fully customized workflow view while allowing the platform to maintain a robust, predictable state machine for core recruitment functions.
+    - **Candidacy States List**: Each application has one of the following system-managed states: `Applied`, `In-Review`, `Screening`, `Interviewing`, `Offer-Draft`, `Offer-Extended`, `Offer-Accepted`, `Offer-Rejected`, `Hired`, `Withdrawn`, `Rejected`.
     - **Communication Threads**: Each candidacy has two dedicated communication threads:
         - **Internal Discussion**: A private thread for the Recruiter, Hiring Manager, and all assigned Interviewers to discuss the candidate, share feedback, and coordinate internally. This replaces static notes with an interactive discussion.
         - **Candidate Chat**: A thread for the Recruiter and Hiring Manager to communicate directly with the candidate for coordination and updates.
@@ -120,21 +127,24 @@ An individual professional using the platform for career growth, job seeking, an
 - **Endorsements**: Colleagues can endorse each other for job applications.
 
 #### F. User Blocking and Unblocking
-- **Blocking a User**: A Hub User can block another Hub User at any time. The blocked user is not notified.
+- **Blocking a User**: A Hub User can block another Hub User at any time. The blocked user is not notified. Blocking is intended to prevent unwanted interactions.
     - **Immediate Effects**:
-        - If the blocker and the blocked user were following each other, both follow connections are immediately severed and are not automatically restored upon unblocking.
-        - If they were colleagues, the colleague connection is removed and is not automatically restored upon unblocking.
+        - If the blocker and the blocked user were following each other, both follow connections are immediately severed.
+        - If they were colleagues, the colleague connection is removed.
+        - These connections are not automatically restored upon unblocking.
     - **Interaction Restrictions**:
-        - Neither user can follow the other again.
-        - Neither user can send a colleague request to the other.
-        - The blocked user cannot view the blocker's profile, posts, or comments, and vice-versa.
-        - The blocked user cannot comment on or reply to the blocker's posts.
+        - **Viewing Content**: Both users can still view each other's profiles and public posts. Blocking is not a cloaking mechanism.
+        - **Mutual Interaction Block**: To prevent targeted harassment, the interaction block is mutual. Neither the blocker nor the blocked user can:
+            - Follow the other user.
+            - Send a colleague request to the other user.
+            - Comment on or reply to the other user's posts.
+            - Upvote or downvote the other user's posts or comments.
 - **Unblocking a User**:
-    - A user can unblock another user at any time.
+    - A user can unblock another user at any time from their settings.
     - **Effects**:
-        - The block is lifted, allowing both users to view each other's profiles and posts again.
-        - They can now follow each other and send colleague requests.
-        - Past follows, colleague connections, or interactions are not automatically restored.
+        - The mutual interaction block is lifted.
+        - Both users are now able to follow each other, send colleague requests, and interact with each other's content again.
+        - Past follows, colleague connections, or other interactions are not automatically restored.
 
 ---
 
