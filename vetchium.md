@@ -15,7 +15,16 @@ An individual who works for a registered employer. They can have various roles a
 ### Core Functionalities:
 
 #### A. Account & Access Management
-- **Onboarding & Authentication**: A new user can be invited to the platform. They can set their password upon first login. Standard authentication includes email/password sign-in, a two-factor authentication (TFA) step, and a "forgot password" flow for account recovery.
+- **Onboarding & Authentication**: The onboarding process for an employer organization is initiated through domain verification, ensuring that only legitimate representatives can create an account.
+
+    - **Domain-First Sign-In**: The sign-in process begins with the user entering their company's domain name (e.g., `yourcompany.com`).
+    - **Existing Organizations**: If the domain is already registered with Vetchium, the system will display fields for the user's email address and password. Upon successful authentication, the user receives a token to proceed, potentially including a subsequent Two-Factor Authentication (TFA) step.
+    - **New Organization Onboarding**: If the domain is not yet registered, the system triggers a verification process:
+        1.  **DNS Record Check**: Vetchium performs a DNS lookup for a specific TXT record: `vetchium-admin.<domain>.<tld>`. The value of this record must be the email address of the designated administrator.
+        2.  **Admin Signup Invitation**: A password setup email, containing a unique and time-sensitive signup URL, is sent to the email address retrieved from the DNS record.
+        3.  **Initial Admin Setup**: The recipient of the email follows the signup URL to set their password and officially create the employer account. This user automatically becomes the first administrator for the organization on Vetchium.
+    - **Standard Authentication**: For all subsequent logins by registered users, authentication includes email/password sign-in, a two-factor authentication (TFA) step, and a "forgot password" flow for account recovery.
+- **Domain Management**: The initial administrator can add and manage multiple domains owned by the same employer. Each new domain must be verified using the same DNS TXT record procedure (`vetchium-admin.<new-domain>.<tld>`) to prove ownership.
 - **Password Management**: Any logged-in user can change their own password.
 - **User Administration**: Users with administrative rights can:
     - Invite new users to the organization's portal.
