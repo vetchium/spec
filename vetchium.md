@@ -279,15 +279,15 @@ The Vetchium platform operates as a single, globally distributed system. While t
 
 ### Data Residency and Constraints
 
-To meet regulatory requirements, user and organization data is assigned a "Home Region" for storage.
+To meet regulatory requirements, data is stored in a "Home Region" assigned to the entity that owns the data.
 
-- All core data for a Hub User (including their Posts, Comments, and Profile) is stored in the Home Region selected during their account creation.
-- All core data for an Organization (including its Job Openings) is stored in the Home Region selected during its creation. If an Organization has sub-entities in different regions, the data for those sub-entities will be stored in their respective designated regions.
-- While data is stored in a specific region, it is accessible globally to all users of the platform, subject to standard permissions.
-- Users can request to migrate their profile and data from one region to another, subject to platform policies.
-- Organizations cannot be migrated from one region to another. They must be recreated in the new region if a change is required.
-- To ensure a seamless global user experience, the following must be unique across the entire platform, regardless of region: 
-    - Organization domain names
+- **Hub User Data**: All core data for a Hub User (including their Posts, Comments, and Profile) is stored in the Home Region selected during their account creation. Users can request to migrate their profile and data to another region, subject to platform policies.
+- **Organization Data**: An Employer's presence on the platform consists of a single top-level Organization and an optional hierarchy of Sub-Organizations.
+    - Each entity (the top-level Organization and each Sub-Organization) must have a "Home Region" assigned to it at the time of its creation. This selection is permanent and cannot be changed.
+    - Data created for a specific entity is stored in its designated Home Region. For example, a job opening created for "Acme Gmbh" (a sub-organization with its Home Region in the EU) will have its data stored in the EU region, even if the parent organization's Home Region is in Singapore.
+    - While data storage is regional, it is accessible globally to all authorized users of the platform, subject to their permissions.
+- **Platform-Wide Unique Identifiers**: To ensure a seamless global user experience, the following must be unique across the entire platform, regardless of region:
+    - Organization domain names (associated with the top-level Organization)
     - Hub User handles
     - Hub User email addresses
 
