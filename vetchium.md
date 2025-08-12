@@ -49,6 +49,14 @@ An individual who works for a registered employer. They can have various roles a
     - Change the status of an opening (e.g., Active, Paused, Closed).
     - Manage a list of "watchers" (internal users) who receive notifications for a specific opening.
     - Search for and assign skill tags (VTags) to openings for better discoverability.
+    - **Opening Questions**: Optionally, a set of questions can be added to an opening for applicants to answer.
+        - **Question Types**: The supported formats are:
+            - **Checkboxes**: For pre-defined, multiple-value answers.
+            - **Radio Buttons**: For pre-defined, single-value answers.
+            - **Textareas**: For free-form text answers with a configurable maximum character limit.
+        - **Lifecycle Management**: Questions can be added, edited, or removed only while the job opening is in a `Draft` state. Any question can be marked as mandatory.
+        - **Viewing Responses**: When viewing the list of applicants, employers can see the responses to these questions.
+        - **Versioning**: If a published opening is edited to add a new mandatory question, existing applications will not be invalidated. The system will maintain the original responses associated with the version of the questions that existed at the time of application.
 - **Candidate Applications**:
     - View a list of all candidates who have applied for an opening.
     - View a candidate's resume and their detailed professional profile (bio, education, achievements).
@@ -298,6 +306,3 @@ To meet regulatory requirements, data is stored in a "Home Region" assigned to t
 - All top-level APIs which returns a list of items should support pagination. There must be support for a Limit field, an explicit mention of the Sorting Order (Ascending or Descending), Some kind of Offset field to indicate the fetching boundary.
 - All fields in the request bodies should have limits on length, validation checks
 - In case of errors, the API responses should clearly convey which of the request fields are failing or causing an error in case of HTTP 400 errors. The way in which the errors should be parsed to understand the cause of the error for validation failures should be standardized.
-
-### TODOs and Open Questions
-- **Pagination Strategy**: The current specification suggests offset-based pagination. We need to evaluate and consider recommending **cursor-based pagination** (using a `next_page_token` or similar). This approach is generally more performant and robust for real-time systems and avoids issues with data shifting between pages.
