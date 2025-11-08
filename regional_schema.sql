@@ -57,24 +57,12 @@ CREATE TABLE employer_domains (
     verified_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     -- An employer can have only one primary domain.
-    CONSTRAINT uq_employer_primary_domain UNIQUE (employer_id, is_primary) WHERE (is_primary = TRUE)
+    CONSTRAINT uq_employer_primary_domain UNIQUE (employer_id, is_primary)
 );
+
+CREATE UNIQUE INDEX idx_uq_employer_primary_domain ON employer_domains (employer_id) WHERE is_primary = TRUE;
 
 -- Full audit trail for domain ownership changes.
-CREATE TABLE employer_domains_history (
-    history_id BIGSERIAL PRIMARY KEY,
-    domain_name VARCHAR(255) NOT NULL,
-    employer_id UUID NOT NULL,
-    change_reason history_change_reason NOT NULL,
-    valid_from TIMESTAMPTZ NOT NULL,
-    valid_to TIMESTAMPTZ, -- NULL indicates the current record
-    changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_employer_domains_history_domain_name ON employer_domains_history(domain_name);
-CREATE INDEX idx_employer_domains_history_employer_id ON employer_domains_history(employer_id);
-
--- -----------------
--- Users (HubUsers & OrgUsers)
 -- -----------------
 
 -- HubUsers (Job Seekers) - This table holds the regional profile.
@@ -98,8 +86,10 @@ CREATE TABLE hub_user_emails (
     verified_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     -- A user can have only one primary email.
-    CONSTRAINT uq_hub_user_primary_email UNIQUE (hub_user_id, is_primary) WHERE (is_primary = TRUE)
+    CONSTRAINT uq_hub_user_primary_email UNIQUE (hub_user_id, is_primary)
 );
+
+CREATE UNIQUE INDEX idx_uq_hub_user_primary_email ON hub_user_emails (hub_user_id) WHERE is_primary = TRUE;
 
 -- Full audit trail for email ownership changes.
 CREATE TABLE hub_user_emails_history (
@@ -240,7 +230,7 @@ CREATE TABLE candidacy_index (
     employer_id UUID NOT NULL,
     status candidacy_status NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTATMPZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (hub_user_global_id, candidacy_id)
 );
 
