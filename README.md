@@ -12,7 +12,11 @@ This directory contains the database schema and a `docker-compose.yml` file to s
 The `docker-compose.yml` file sets up two PostgreSQL instances:
 
 - `global_db`: Runs on port `5432` and initializes with `global_schema.sql`.
-- `regional_db`: Runs on port `5433` and initializes with `regional_schema.sql`.
+- `regional_db`: Runs on port `6001` and initializes with `regional_schema.sql`.
+
+## Current Status
+
+The Docker Compose setup for the global and regional databases is now functional, and both databases initialize correctly with their respective schemas.
 
 ### How to run the databases:
 
@@ -37,7 +41,7 @@ The `docker-compose.yml` file sets up two PostgreSQL instances:
 
 -   **Regional Database:**
     -   Host: `localhost`
-    -   Port: `5433`
+    -   Port: `6001`
     -   Database: `vetchium_regional`
     -   User: `user`
     -   Password: `password`
