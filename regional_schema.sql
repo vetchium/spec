@@ -49,8 +49,8 @@ END;
 
 CREATE TABLE employers (
     employer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    primary_region_id SMALLINT NOT NULL, -- Reference to a region_id from the global table
+    name TEXT NOT NULL,
+    primary_region_code TEXT NOT NULL, -- Reference to a region_code from the global table
     allow_multiple_applications_policy BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -64,13 +64,13 @@ EXECUTE PROCEDURE trigger_set_timestamp();
 -- Stores the regions where an employer operates.
 CREATE TABLE employer_operating_regions (
     employer_id UUID NOT NULL REFERENCES employers(employer_id) ON DELETE CASCADE,
-    region_id SMALLINT NOT NULL, -- Reference to a region_id from the global table
-    PRIMARY KEY (employer_id, region_id)
+    region_code TEXT NOT NULL, -- Reference to a region_code from the global table
+    PRIMARY KEY (employer_id, region_code)
 );
 
 -- Current state of employer domains. For history, see employer_domains_history.
 CREATE TABLE employer_domains (
-    domain_name VARCHAR(255) PRIMARY KEY,
+    domain_name TEXT PRIMARY KEY,
     employer_id UUID NOT NULL REFERENCES employers(employer_id) ON DELETE CASCADE,
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     verified_at TIMESTAMPTZ NOT NULL,
@@ -83,7 +83,7 @@ CREATE UNIQUE INDEX idx_uq_employer_primary_domain ON employer_domains (employer
 -- Full audit trail for domain ownership changes.
 CREATE TABLE employer_domains_history (
     history_id BIGSERIAL PRIMARY KEY,
-    domain_name VARCHAR(255) NOT NULL,
+    domain_name TEXT NOT NULL,
     employer_id UUID NOT NULL,
     change_reason history_change_reason NOT NULL,
     valid_from TIMESTAMPTZ NOT NULL,
@@ -99,9 +99,9 @@ CREATE TABLE employer_domains_history (
 CREATE TABLE hub_users (
     hub_user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Regional ID
     hub_user_global_id UUID UNIQUE NOT NULL, -- Immutable Global ID
-    handle VARCHAR(50) UNIQUE NOT NULL,
+    handle TEXT UNIQUE NOT NULL,
     bio TEXT,
-    profile_picture_url VARCHAR(2048),
+    profile_picture_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -112,23 +112,23 @@ BEFORE UPDATE ON hub_users
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
--- Current state of HubUser emails. For history, see hub_user_emails_history.
-CREATE TABLE hub_user_emails (
-    email VARCHAR(255) PRIMARY KEY,
+-- Current state of HubUser email addresses. For history, see hub_user_email_addresses_history.
+CREATE TABLE hub_user_email_addresses (
+    email_address TEXT PRIMARY KEY,
     hub_user_id UUID NOT NULL REFERENCES hub_users(hub_user_id) ON DELETE CASCADE,
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     verified_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    -- A user can have only one primary email. This is enforced by the partial unique index below.
+    -- A user can have only one primary email_address. This is enforced by the partial unique index below.
 );
 
-CREATE UNIQUE INDEX idx_uq_hub_user_primary_email ON hub_user_emails (hub_user_id) WHERE is_primary = TRUE;
+CREATE UNIQUE INDEX idx_uq_hub_user_primary_email_address ON hub_user_email_addresses (hub_user_id) WHERE is_primary = TRUE;
 
--- Full audit trail for email ownership changes.
-CREATE TABLE hub_user_emails_history (
+-- Full audit trail for email_address ownership changes.
+CREATE TABLE hub_user_email_addresses_history (
     history_id BIGSERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
+    email_address TEXT NOT NULL,
     hub_user_id UUID NOT NULL,
     change_reason history_change_reason NOT NULL,
     valid_from TIMESTAMPTZ NOT NULL,
@@ -139,7 +139,7 @@ CREATE TABLE hub_user_emails_history (
 -- Full audit trail for handle changes.
 CREATE TABLE hub_user_handles_history (
     history_id BIGSERIAL PRIMARY KEY,
-    handle VARCHAR(50) NOT NULL,
+    handle TEXT NOT NULL,
     hub_user_id UUID NOT NULL,
     change_reason history_change_reason NOT NULL,
     valid_from TIMESTAMPTZ NOT NULL,
@@ -151,14 +151,14 @@ CREATE TABLE hub_user_handles_history (
 CREATE TABLE org_users (
     org_user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employer_id UUID NOT NULL REFERENCES employers(employer_id) ON DELETE CASCADE,
-    email VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(255), -- Can be null if using SSO
+    email_address TEXT NOT NULL,
+    password_hash TEXT, -- Can be null if using SSO
     auth_method org_user_auth_method NOT NULL,
     sso_provider sso_provider, -- Null if auth_method is EMAIL_PASSWORD
     is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (employer_id, email)
+    UNIQUE (employer_id, email_address)
 );
 
 CREATE TRIGGER set_timestamp
@@ -166,10 +166,10 @@ BEFORE UPDATE ON org_users
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
--- Full audit trail for OrgUser email changes.
-CREATE TABLE org_user_emails_history (
+-- Full audit trail for OrgUser email_address changes.
+CREATE TABLE org_user_email_addresses_history (
     history_id BIGSERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
+    email_address TEXT NOT NULL,
     org_user_id UUID NOT NULL,
     change_reason history_change_reason NOT NULL,
     valid_from TIMESTAMPTZ NOT NULL,
@@ -184,10 +184,10 @@ CREATE TABLE org_user_emails_history (
 CREATE TABLE openings (
     opening_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employer_id UUID NOT NULL REFERENCES employers(employer_id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
+    title TEXT NOT NULL,
     description TEXT,
-    -- The region_id where this opening is located. This is the region of the current database.
-    region_id SMALLINT NOT NULL,
+    -- The region_code where this opening is located. This is the region of the current database.
+    region_code TEXT NOT NULL,
     recruiter_org_user_id UUID REFERENCES org_users(org_user_id) ON DELETE SET NULL,
     hiring_manager_org_user_id UUID REFERENCES org_users(org_user_id) ON DELETE SET NULL,
     status opening_status NOT NULL DEFAULT 'DRAFT',
@@ -215,7 +215,7 @@ CREATE TABLE applications (
     application_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     opening_id UUID NOT NULL REFERENCES openings(opening_id) ON DELETE CASCADE,
     hub_user_global_id UUID NOT NULL, -- Global ID of the applicant
-    applicant_home_region_id SMALLINT NOT NULL, -- HubUser's home region for index table updates
+    applicant_home_region_code TEXT NOT NULL, -- HubUser's home region for index table updates
     status application_status NOT NULL DEFAULT 'APPLIED',
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -264,7 +264,7 @@ CREATE TABLE interviews (
     candidacy_id UUID NOT NULL REFERENCES candidacies(candidacy_id) ON DELETE CASCADE,
     status interview_status NOT NULL DEFAULT 'SCHEDULED',
     scheduled_at TIMESTAMPTZ,
-    format VARCHAR(255), -- e.g., 'Phone Screen', 'On-site Technical'
+    format TEXT, -- e.g., 'Phone Screen', 'On-site Technical'
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -308,7 +308,7 @@ CREATE TABLE interviewers (
 CREATE TABLE application_index (
     hub_user_global_id UUID NOT NULL,
     application_id UUID NOT NULL,
-    application_region_id SMALLINT NOT NULL, -- The region where the actual application is stored
+    application_region_code TEXT NOT NULL, -- The region where the actual application is stored
     opening_id UUID NOT NULL,
     employer_id UUID NOT NULL,
     status application_status NOT NULL,
@@ -320,7 +320,7 @@ CREATE TABLE application_index (
 CREATE TABLE candidacy_index (
     hub_user_global_id UUID NOT NULL,
     candidacy_id UUID NOT NULL,
-    candidacy_region_id SMALLINT NOT NULL, -- The region where the actual candidacy is stored
+    candidacy_region_code TEXT NOT NULL, -- The region where the actual candidacy is stored
     application_id UUID NOT NULL,
     opening_id UUID NOT NULL,
     employer_id UUID NOT NULL,
@@ -369,21 +369,30 @@ BEFORE UPDATE ON comments
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
--- For internal (hiring team) and external (candidate) communication threads
-CREATE TABLE communication_threads (
-    thread_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+-- For internal (hiring team) and external (candidate) communication
+CREATE TABLE candidacy_comments (
+    comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     candidacy_id UUID NOT NULL REFERENCES candidacies(candidacy_id) ON DELETE CASCADE,
     is_internal_discussion BOOLEAN NOT NULL, -- TRUE for internal, FALSE for candidate chat
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(candidacy_id, is_internal_discussion)
-);
-
-CREATE TABLE thread_messages (
-    message_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    thread_id UUID NOT NULL REFERENCES communication_threads(thread_id) ON DELETE CASCADE,
     author_org_user_id UUID REFERENCES org_users(org_user_id) ON DELETE SET NULL,
     author_hub_user_id UUID REFERENCES hub_users(hub_user_id) ON DELETE SET NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT chk_message_author CHECK (author_org_user_id IS NOT NULL OR author_hub_user_id IS NOT NULL)
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- An author must be present, and must be of a single type
+    CONSTRAINT chk_comment_author CHECK (
+      (author_org_user_id IS NOT NULL AND author_hub_user_id IS NULL) OR
+      (author_org_user_id IS NULL AND author_hub_user_id IS NOT NULL)
+    ),
+    -- HubUsers cannot post in internal discussions
+    CONSTRAINT chk_internal_discussion_author CHECK (
+      is_internal_discussion = FALSE OR author_hub_user_id IS NULL
+    )
 );
+
+CREATE INDEX idx_candidacy_comments_candidacy_id ON candidacy_comments(candidacy_id);
+
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON candidacy_comments
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
