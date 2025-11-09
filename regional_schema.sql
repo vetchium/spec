@@ -28,6 +28,20 @@ CREATE TYPE candidacy_status AS ENUM (
 CREATE TYPE interview_status AS ENUM ('SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED');
 CREATE TYPE history_change_reason AS ENUM ('CREATED', 'TRANSFERRED', 'VERIFIED', 'DEACTIVATED', 'REMOVED');
 CREATE TYPE opening_question_type AS ENUM ('CHECKBOX', 'RADIO', 'TEXTAREA');
+CREATE TYPE opening_status AS ENUM ('DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED', 'ARCHIVED');
+
+-- -----------------
+-- Utility Functions & Triggers
+-- -----------------
+
+-- Trigger function to automatically set updated_at on row modification.
+CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+RETURNS TRIGGER AS '
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+' LANGUAGE plpgsql;
 
 -- -----------------
 -- Employers & Orgs
@@ -42,6 +56,11 @@ CREATE TABLE employers (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON employers
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
 -- Stores the regions where an employer operates.
 CREATE TABLE employer_operating_regions (
     employer_id UUID NOT NULL REFERENCES employers(employer_id) ON DELETE CASCADE,
@@ -55,17 +74,28 @@ CREATE TABLE employer_domains (
     employer_id UUID NOT NULL REFERENCES employers(employer_id) ON DELETE CASCADE,
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     verified_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    -- An employer can have only one primary domain.
-    CONSTRAINT uq_employer_primary_domain UNIQUE (employer_id, is_primary)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    -- An employer can have only one primary domain. This is enforced by the partial unique index below.
 );
 
 CREATE UNIQUE INDEX idx_uq_employer_primary_domain ON employer_domains (employer_id) WHERE is_primary = TRUE;
 
 -- Full audit trail for domain ownership changes.
+CREATE TABLE employer_domains_history (
+    history_id BIGSERIAL PRIMARY KEY,
+    domain_name VARCHAR(255) NOT NULL,
+    employer_id UUID NOT NULL,
+    change_reason history_change_reason NOT NULL,
+    valid_from TIMESTAMPTZ NOT NULL,
+    valid_to TIMESTAMPTZ, -- NULL indicates the current record
+    changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------
+-- HubUsers (Job Seekers)
 -- -----------------
 
--- HubUsers (Job Seekers) - This table holds the regional profile.
+-- This table holds the regional profile.
 CREATE TABLE hub_users (
     hub_user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Regional ID
     hub_user_global_id UUID UNIQUE NOT NULL, -- Immutable Global ID
@@ -77,6 +107,11 @@ CREATE TABLE hub_users (
 );
 CREATE INDEX idx_hub_users_global_id ON hub_users(hub_user_global_id);
 
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON hub_users
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
 -- Current state of HubUser emails. For history, see hub_user_emails_history.
 CREATE TABLE hub_user_emails (
     email VARCHAR(255) PRIMARY KEY,
@@ -84,9 +119,8 @@ CREATE TABLE hub_user_emails (
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     verified_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    -- A user can have only one primary email.
-    CONSTRAINT uq_hub_user_primary_email UNIQUE (hub_user_id, is_primary)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    -- A user can have only one primary email. This is enforced by the partial unique index below.
 );
 
 CREATE UNIQUE INDEX idx_uq_hub_user_primary_email ON hub_user_emails (hub_user_id) WHERE is_primary = TRUE;
@@ -101,8 +135,17 @@ CREATE TABLE hub_user_emails_history (
     valid_to TIMESTAMPTZ, -- NULL indicates the current record
     changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_hub_user_emails_history_email ON hub_user_emails_history(email);
-CREATE INDEX idx_hub_user_emails_history_hub_user_id ON hub_user_emails_history(hub_user_id);
+
+-- Full audit trail for handle changes.
+CREATE TABLE hub_user_handles_history (
+    history_id BIGSERIAL PRIMARY KEY,
+    handle VARCHAR(50) NOT NULL,
+    hub_user_id UUID NOT NULL,
+    change_reason history_change_reason NOT NULL,
+    valid_from TIMESTAMPTZ NOT NULL,
+    valid_to TIMESTAMPTZ, -- NULL indicates the current record
+    changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- OrgUsers (Employer's Users)
 CREATE TABLE org_users (
@@ -118,6 +161,22 @@ CREATE TABLE org_users (
     UNIQUE (employer_id, email)
 );
 
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON org_users
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+-- Full audit trail for OrgUser email changes.
+CREATE TABLE org_user_emails_history (
+    history_id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    org_user_id UUID NOT NULL,
+    change_reason history_change_reason NOT NULL,
+    valid_from TIMESTAMPTZ NOT NULL,
+    valid_to TIMESTAMPTZ, -- NULL indicates the current record
+    changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- -----------------
 -- Openings & Applications
 -- -----------------
@@ -131,10 +190,15 @@ CREATE TABLE openings (
     region_id SMALLINT NOT NULL,
     recruiter_org_user_id UUID REFERENCES org_users(org_user_id) ON DELETE SET NULL,
     hiring_manager_org_user_id UUID REFERENCES org_users(org_user_id) ON DELETE SET NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'DRAFT', -- e.g., DRAFT, ACTIVE, PAUSED, CLOSED
+    status opening_status NOT NULL DEFAULT 'DRAFT',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON openings
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
 
 CREATE TABLE opening_questions (
     question_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -159,6 +223,11 @@ CREATE TABLE applications (
     UNIQUE (opening_id, hub_user_global_id)
 );
 CREATE INDEX idx_applications_hub_user_global_id ON applications(hub_user_global_id);
+
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON applications
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
 
 CREATE TABLE application_answers (
     answer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -185,6 +254,11 @@ CREATE TABLE candidacies (
 CREATE INDEX idx_candidacies_opening_id ON candidacies(opening_id);
 CREATE INDEX idx_candidacies_hub_user_global_id ON candidacies(hub_user_global_id);
 
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON candidacies
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
 CREATE TABLE interviews (
     interview_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     candidacy_id UUID NOT NULL REFERENCES candidacies(candidacy_id) ON DELETE CASCADE,
@@ -208,6 +282,28 @@ CREATE TABLE interviewers (
 -- -----------------
 -- These tables are populated in the HubUser's home region to provide a
 -- consolidated view of their activities across all regions.
+--
+-- DATA CONSISTENCY PROTOCOL:
+-- These tables are updated via an eventually consistent, two-phase process.
+-- The order of operations MUST be followed to ensure data integrity without
+-- requiring distributed transactions.
+--
+-- 1.  Phase 1: Write to the Source-of-Truth Table.
+--     - The primary record (e.g., an `applications` row) is created in the
+--       database of the region where the action occurred (e.g., the opening's region).
+--     - This is the authoritative record.
+--
+-- 2.  Phase 2: Write to the Index Table via Asynchronous, Guaranteed Delivery.
+--     - After the Phase 1 write is successfully committed, a message is dispatched
+--       via a reliable, asynchronous messaging system.
+--     - A background worker in the applicant's home region consumes this message
+--       and inserts the corresponding record into the index table below (e.g.,
+--       `application_index`).
+--     - This operation must be idempotent. If the worker fails, it must be able to
+--       retry without creating duplicate index entries.
+--
+-- This design ensures that the primary user action is fast (a single-region write)
+-- while guaranteeing that the user's consolidated view will be updated shortly after.
 
 CREATE TABLE application_index (
     hub_user_global_id UUID NOT NULL,
@@ -252,6 +348,11 @@ CREATE TABLE posts (
     )
 );
 
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON posts
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
 CREATE TABLE comments (
     comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     post_id UUID NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
@@ -262,6 +363,11 @@ CREATE TABLE comments (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON comments
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
 
 -- For internal (hiring team) and external (candidate) communication threads
 CREATE TABLE communication_threads (
