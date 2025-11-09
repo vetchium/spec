@@ -30,6 +30,8 @@ CREATE TYPE history_change_reason AS ENUM ('CREATED', 'TRANSFERRED', 'VERIFIED',
 CREATE TYPE opening_question_type AS ENUM ('CHECKBOX', 'RADIO', 'TEXTAREA');
 CREATE TYPE opening_status AS ENUM ('DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED', 'ARCHIVED');
 
+CREATE TYPE hub_user_profile_status AS ENUM ('ACTIVE', 'INACTIVE_MIGRATED');
+
 -- -----------------
 -- Utility Functions & Triggers
 -- -----------------
@@ -101,7 +103,7 @@ CREATE TABLE hub_users (
     hub_user_global_id UUID UNIQUE NOT NULL, -- Immutable Global ID
     handle TEXT UNIQUE NOT NULL,
     bio TEXT,
-    profile_picture_url TEXT,
+    profile_status hub_user_profile_status NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

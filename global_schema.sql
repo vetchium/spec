@@ -43,3 +43,13 @@ CREATE TABLE hub_user_handle_digests (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_hub_user_handle_digests_hub_user_global_id ON hub_user_handle_digests(hub_user_global_id);
+
+-- Tracks the migration history of HubUsers from one region to another.
+CREATE TABLE hub_user_migrations (
+    migration_id BIGSERIAL PRIMARY KEY,
+    hub_user_global_id UUID NOT NULL,
+    source_region_code TEXT NOT NULL REFERENCES regions(region_code),
+    destination_region_code TEXT NOT NULL REFERENCES regions(region_code),
+    migrated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_hub_user_migrations_hub_user_global_id ON hub_user_migrations(hub_user_global_id);
