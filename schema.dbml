@@ -1,4 +1,4 @@
-enum regions {
+enum global.region {
   ind1
   usa1
   deu1
@@ -37,13 +37,26 @@ enum global.org_status {
 }
 
 Table global.orgs {
-  org_id uuid
+  org_id uuid [primary key]
   org_status global.org_status
 }
 
+enum global.org_auth_type {
+  email_password
+  saml
+  oauth
+}
+
+Table global.org_auth_types {
+  org_id uuid [not null]
+  auth_type global.org_auth_type
+}
+
+Ref:global.org_auth_types.org_id > global.orgs.org_id
+
 Table global.org_supported_regions {
   org_id uuid [not null]
-  region region
+  region global.region
 
   indexes {
     (org_id, region) [pk]
@@ -51,7 +64,7 @@ Table global.org_supported_regions {
 
 }
 
-Ref: global.orgs.org_id < global.org_supported_regions.org_id
+Ref: global.org_supported_regions.org_id > global.orgs.org_id
 
 enum global.org_domain_verification_state {
   unverified
@@ -98,3 +111,25 @@ Table regional.hub_user_post_history {
 }
 
 Ref: regional.hub_user_post_history.post_id > regional.hub_user_posts.post_id
+
+Table regional.org_users {
+  org_user_id uuid [primary key]
+  org_id uuid [not null]
+  org_user_auth_type org_auth_type [not null]
+}
+
+Ref: global.orgs.org_id < regional.org_users.org_id
+
+Table regional.org_openings {
+  org_id uuid [not null]
+  opening_id text [not null]
+  title text [not null]
+  jd text [not null]
+
+  indexes {
+    (org_id, opening_id) [pk]
+  }
+
+}
+
+Ref: global.orgs.org_id < regional.org_openings.org_id
