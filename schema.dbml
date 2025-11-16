@@ -120,11 +120,21 @@ Table regional.org_users {
 
 Ref: global.orgs.org_id < regional.org_users.org_id
 
-Table regional.org_openings {
+enum regional.opening_state {
+  draft
+  active
+  suspended
+  closed
+}
+
+Table regional.openings {
   org_id uuid [not null]
   opening_id text [not null]
   title text [not null]
   jd text [not null]
+  state regional.opening_state
+
+  hiring_manager uuid [not null]
 
   indexes {
     (org_id, opening_id) [pk]
@@ -132,4 +142,5 @@ Table regional.org_openings {
 
 }
 
-Ref: global.orgs.org_id < regional.org_openings.org_id
+Ref: regional.openings.org_id < global.orgs.org_id
+Ref: regional.openings.hiring_manager < regional.org_users.org_user_id
