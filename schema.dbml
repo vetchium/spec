@@ -1,0 +1,100 @@
+enum regions {
+  ind1
+  usa1
+  deu1
+  sgp1
+  // more in future, like China, Russia, Australia, etc.
+}
+
+enum global.hub_user_status {
+  active
+  disabled
+  deleted
+}
+
+enum global.language {
+  en_IN
+  ta
+  // <ISO 639-1 language code>[_<ISO 3166-1 alpha-2 country code>]
+}
+
+Table global.hub_users_global {
+  hub_user_id uuid [primary key, not null]
+  generated_handle text [not null]
+  custom_handle text [not null, unique]
+  email_hash bytea [not null, unique]
+  hub_user_status global.hub_user_status [not null]
+  preferred_language global.language [not null]
+  title text
+  long_bio text
+  created_at timestamp [default: `now()`]
+}
+
+enum global.org_status {
+  onboard_pending
+  operational
+  defunct
+}
+
+Table global.orgs {
+  org_id uuid
+  org_status global.org_status
+}
+
+Table global.org_supported_regions {
+  org_id uuid [not null]
+  region region
+
+  indexes {
+    (org_id, region) [pk]
+  }
+
+}
+
+Ref: global.orgs.org_id < global.org_supported_regions.org_id
+
+enum global.org_domain_verification_state {
+  unverified
+  verified
+}
+
+Table global.org_domains {
+  domain text [primary key]
+  org_id uuid [not null]
+  verification_state global.org_domain_verification_state
+  last_verified_at timestamp
+}
+
+Ref: global.org_domains.org_id > global.orgs.org_id
+
+Table regional.hub_users_regional {
+  hub_user_id uuid [primary key]
+  password_hash bytea
+}
+
+Ref: global.hub_users_global.hub_user_id - regional.hub_users_regional.hub_user_id
+
+enum global.hub_post_status {
+  draft
+  published
+  unpublished
+}
+
+Table regional.hub_user_posts {
+  post_id uuid [primary key]
+  content text [note: 'Content of the post']
+  hub_user_id uuid [not null]
+  post_status global.hub_post_status
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Ref: regional.hub_user_posts.hub_user_id > regional.hub_users_regional.hub_user_id
+
+Table regional.hub_user_post_history {
+  post_id uuid
+  content text [not null]
+  created_at timestamp [not null]
+}
+
+Ref: regional.hub_user_post_history.post_id > regional.hub_user_posts.post_id
