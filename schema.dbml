@@ -29,7 +29,7 @@ Table global.hub_users {
   status global.hub_user_status [not null]
   preferred_language global.language [not null]
   created_at timestamp [default: `now()`]
-  
+
   // No PII here. Profile data is in regional tables.
 }
 
@@ -38,10 +38,11 @@ Table global.hub_user_email_history {
   hub_user_global_id uuid [not null]
   valid_from timestamp [not null]
   valid_to timestamp [note: 'NULL means current owner']
-  
+
   indexes {
     (email_hash, valid_from) [pk]
   }
+
 }
 
 Ref: global.hub_user_email_history.hub_user_global_id > global.hub_users.hub_user_global_id
@@ -54,10 +55,22 @@ enum global.org_status {
 
 Table global.orgs {
   org_id uuid [primary key]
-  name text [not null]
   org_status global.org_status
   created_at timestamp [default: `now()`]
 }
+
+Table global.org_names {
+  org_id uuid [not null]
+  locale text [not null]
+  value text [not null]
+
+  indexes {
+    (org_id, locale) [pk]
+  }
+
+}
+
+Ref: global.org_names.org_id > global.orgs.org_id
 
 enum global.org_auth_type {
   email_password
@@ -69,10 +82,11 @@ Table global.org_auth_types {
   org_id uuid [not null]
   auth_type global.org_auth_type
   sso_provider text [note: 'e.g. GOOGLE, OKTA, AZURE_AD']
-  
+
   indexes {
     (org_id, auth_type) [pk]
   }
+
 }
 
 Ref: global.org_auth_types.org_id > global.orgs.org_id
@@ -80,10 +94,11 @@ Ref: global.org_auth_types.org_id > global.orgs.org_id
 Table global.org_supported_regions {
   org_id uuid [not null]
   region global.region
-  
+
   indexes {
     (org_id, region) [pk]
   }
+
 }
 
 Ref: global.org_supported_regions.org_id > global.orgs.org_id
@@ -107,13 +122,89 @@ Table global.org_domain_history {
   org_id uuid [not null]
   valid_from timestamp [not null]
   valid_to timestamp
-  
+
   indexes {
     (domain, valid_from) [pk]
   }
+
 }
 
 Ref: global.org_domain_history.org_id > global.orgs.org_id
+
+// --- Agencies (Global) ---
+
+enum global.agency_status {
+  onboard_pending
+  operational
+  defunct
+}
+
+Table global.agencies {
+  agency_id uuid [primary key]
+  agency_status global.agency_status
+  created_at timestamp [default: `now()`]
+}
+
+Table global.agency_names {
+  agency_id uuid [not null]
+  locale text [not null]
+  value text [not null]
+
+  indexes {
+    (agency_id, locale) [pk]
+  }
+
+}
+
+Ref: global.agency_names.agency_id > global.agencies.agency_id
+
+Table global.agency_auth_types {
+  agency_id uuid [not null]
+  auth_type global.org_auth_type
+  sso_provider text
+
+  indexes {
+    (agency_id, auth_type) [pk]
+  }
+
+}
+
+Ref: global.agency_auth_types.agency_id > global.agencies.agency_id
+
+Table global.agency_supported_regions {
+  agency_id uuid [not null]
+  region global.region
+
+  indexes {
+    (agency_id, region) [pk]
+  }
+
+}
+
+Ref: global.agency_supported_regions.agency_id > global.agencies.agency_id
+
+Table global.agency_domains {
+  domain text [primary key]
+  agency_id uuid [not null]
+  verification_state global.org_domain_verification_state
+  last_verified_at timestamp
+}
+
+Ref: global.agency_domains.agency_id > global.agencies.agency_id
+
+Table global.agency_domain_history {
+  domain text [not null]
+  agency_id uuid [not null]
+  valid_from timestamp [not null]
+  valid_to timestamp
+
+  indexes {
+    (domain, valid_from) [pk]
+  }
+
+}
+
+Ref: global.agency_domain_history.agency_id > global.agencies.agency_id
 
 // -----------------------------------------------------------------------------
 // REGIONAL SCHEMA (PII, Operational Data)
@@ -124,11 +215,12 @@ Ref: global.org_domain_history.org_id > global.orgs.org_id
 Table regional.hub_users {
   hub_user_id uuid [primary key, note: 'Regional ID']
   hub_user_global_id uuid [not null, note: 'Link to global identity']
+  email_address text [not null, unique, note: 'Primary login email']
   password_hash bytea [note: 'Only if using email/password']
   created_at timestamp
 }
 
-Ref: regional.hub_users.hub_user_global_id - global.hub_users.hub_user_global_id
+Ref: regional.hub_users.hub_user_global_id > global.hub_users.hub_user_global_id
 
 Table regional.hub_user_profiles {
   hub_user_id uuid [primary key]
@@ -143,20 +235,19 @@ Table regional.hub_user_profiles {
 
 Ref: regional.hub_user_profiles.hub_user_id - regional.hub_users.hub_user_id
 
-Table regional.hub_user_emails {
+Table regional.hub_user_work_emails {
   hub_user_id uuid [not null]
-  email text [not null, note: 'Actual PII email address']
-  is_primary boolean [default: false]
-  is_verified boolean [default: false]
+  email_address text [not null, note: 'Additional work email for verification, not login']
   verified_at timestamp
-  
+
   indexes {
-    (hub_user_id, email) [pk]
-    email [unique]
+    (hub_user_id, email_address) [pk]
+
   }
+
 }
 
-Ref: regional.hub_user_emails.hub_user_id > regional.hub_users.hub_user_id
+Ref: regional.hub_user_work_emails.hub_user_id > regional.hub_users.hub_user_id
 
 Table regional.hub_user_experiences {
   experience_id uuid [primary key]
@@ -197,10 +288,11 @@ Table regional.connections {
   status regional.connection_status [not null]
   created_at timestamp [default: `now()`]
   updated_at timestamp
-  
+
   indexes {
     (requester_id, recipient_id) [pk]
   }
+
 }
 
 Ref: regional.connections.requester_id > regional.hub_users.hub_user_id
@@ -211,10 +303,11 @@ Table regional.follows {
   followee_id uuid [not null] // Can be user or company (polymorphic in app logic, or separate tables)
   followee_type text [note: 'USER or COMPANY']
   created_at timestamp
-  
+
   indexes {
     (follower_id, followee_id, followee_type) [pk]
   }
+
 }
 
 Ref: regional.follows.follower_id > regional.hub_users.hub_user_id
@@ -250,12 +343,14 @@ enum regional.org_user_role {
 Table regional.org_users {
   org_user_id uuid [primary key]
   org_id uuid [not null]
-  email text [not null]
+  email_address text [not null]
   role regional.org_user_role [not null]
+  associated_agency_id uuid [note: 'If this user is an external recruiter from an agency']
   status text [note: 'active, disabled']
 }
 
 Ref: regional.org_users.org_id > global.orgs.org_id
+Ref: regional.org_users.associated_agency_id > global.agencies.agency_id
 
 // --- Hiring / Jobs ---
 
@@ -271,16 +366,18 @@ Table regional.openings {
   org_id uuid [not null]
   title text [not null]
   description text
-  state regional.opening_state
   hiring_manager_id uuid [not null]
+  state regional.opening_state
+  recruiter_id uuid [not null, note: 'Assigned recruiter (can be internal or agency-linked)']
   created_at timestamp
-  
+
   // Pipeline config could be JSONB or separate tables
-  pipeline_config jsonb 
+  pipeline_config jsonb
 }
 
 Ref: regional.openings.org_id > global.orgs.org_id
 Ref: regional.openings.hiring_manager_id > regional.org_users.org_user_id
+Ref: regional.openings.recruiter_id > regional.org_users.org_user_id
 
 enum regional.application_state {
   applied
@@ -293,17 +390,21 @@ Table regional.applications {
   application_id uuid [primary key]
   opening_id uuid [not null]
   hub_user_global_id uuid [not null, note: 'Applicant ID']
+  sourcing_agency_id uuid [note: 'If submitted by an agency']
   state regional.application_state [not null]
   created_at timestamp [default: `now()`]
   updated_at timestamp
-  
+
   indexes {
     (opening_id, hub_user_global_id) [unique]
   }
+
 }
 
 Ref: regional.applications.opening_id > regional.openings.opening_id
+
 Ref: regional.applications.hub_user_global_id > global.hub_users.hub_user_global_id
+Ref: regional.applications.sourcing_agency_id > global.agencies.agency_id
 
 enum regional.candidacy_state {
   active
@@ -350,14 +451,79 @@ Table regional.interviewers {
   interview_id uuid [not null]
   org_user_id uuid [not null]
   rsvp_status text
-  
+
   indexes {
     (interview_id, org_user_id) [pk]
   }
+
 }
 
 Ref: regional.interviewers.interview_id > regional.interviews.interview_id
 Ref: regional.interviewers.org_user_id > regional.org_users.org_user_id
+
+// --- Agency Users & Workflows ---
+
+enum regional.agency_user_role {
+  admin
+  recruiter
+}
+
+Table regional.agency_users {
+  agency_user_id uuid [primary key]
+  agency_id uuid [not null]
+  email_address text [not null]
+  role regional.agency_user_role [not null]
+  status text [note: 'active, disabled']
+}
+
+Ref: regional.agency_users.agency_id > global.agencies.agency_id
+
+Table regional.employer_agencies {
+  org_id uuid [not null]
+  agency_id uuid [not null]
+  status text [note: 'active, suspended']
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (org_id, agency_id) [pk]
+  }
+
+}
+
+Ref: regional.employer_agencies.org_id > global.orgs.org_id
+Ref: regional.employer_agencies.agency_id > global.agencies.agency_id
+
+Table regional.opening_sourcing_agencies {
+  opening_id uuid [not null]
+  agency_id uuid [not null]
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (opening_id, agency_id) [pk]
+  }
+
+}
+
+Ref: regional.opening_sourcing_agencies.opening_id > regional.openings.opening_id
+Ref: regional.opening_sourcing_agencies.agency_id > global.agencies.agency_id
+
+
+
+
+
+Table regional.agency_private_notes {
+  note_id uuid [primary key]
+  agency_id uuid [not null]
+  author_id uuid [not null]
+  hub_user_global_id uuid [not null]
+  content text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+Ref: regional.agency_private_notes.agency_id > global.agencies.agency_id
+Ref: regional.agency_private_notes.author_id > regional.agency_users.agency_user_id
+Ref: regional.agency_private_notes.hub_user_global_id > global.hub_users.hub_user_global_id
 
 // --- Cross-Region Indexes (Stored in HubUser's Home Region) ---
 
@@ -368,10 +534,11 @@ Table regional.application_index {
   target_region global.region [not null, note: 'Region where the application actually exists']
   state regional.application_state
   created_at timestamp
-  
+
   indexes {
     (hub_user_global_id, application_id) [pk]
   }
+
 }
 
 Ref: regional.application_index.hub_user_global_id > global.hub_users.hub_user_global_id
@@ -382,10 +549,11 @@ Table regional.candidacy_index {
   target_region global.region [not null]
   state regional.candidacy_state
   updated_at timestamp
-  
+
   indexes {
     (hub_user_global_id, candidacy_id) [pk]
   }
+
 }
 
 Ref: regional.candidacy_index.hub_user_global_id > global.hub_users.hub_user_global_id
